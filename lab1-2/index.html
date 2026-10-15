@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8' />
+    <title>my First Map</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1' />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+   </style>
+</head>
+<body>
+   <div id='map'></div>
+   <script> // Access token used to link my Mapbox account to the map.
+      mapboxgl.accessToken = 'pk.eyJ1Ijoic3VubGlnaHRzd29yZHMiLCJhIjoiY212NWlsdHBtMDYyNTJ5cHc0b2VicjRqdSJ9.CihPb67PSMZvUwce_YE-uA';
+      const mymap = new mapboxgl.Map({ //Creates a new map object for the Earth
+             container: 'map',
+             style: 'mapbox://styles/mapbox/standard', //This style allows you to see the colours land and water, as well as the roadway hierarchy
+             projection: 'globe', //Display the map as a globe since satellite-v9 defaults to Mercator
+             center: [-122.3321, 47.6062], //Centers map on Seattle's CBD using long/lat!
+             zoom:11, //At this level, you can see major roads and elements of the city's geography, but not individual buildings.
+          });
+// Code from steps 11+:
+mymap.addControl(new mapboxgl.FullscreenControl()); //Allows map to be fullscreen
+mymap.addControl(new mapboxgl.NavigationControl()); //Lets you rotate the map! I did this with my laptop's touchscreen.
+mymap.on('style.load', () => {
+  mymap.setConfigProperty('basemap', 'font', 'Source Sans Pro'); //A highly rated font for visual accessibility
+  mymap.setConfigProperty('basemap', 'theme', 'faded'); //Helps clarify a visual hierarchy
+});
+</script>
+</body>
+</html>
