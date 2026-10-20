@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>My Third Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
+        /* Layout of the legend panel. */
+        #legend {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 110px;
+            background: #fff;
+            margin-right: 20px;
+            margin-bottom: 40px;
+            padding: 10px 20px 10px 10px;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        /* Each row for a population value. */
+        .break {
+            position: relative;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* The circular symbol. */
+        .dot {
+            display: inline-block;
+            margin-top: 5px;
+            border-radius: 50%;
+            opacity: 0.6;
+        }
+
+        /* Label next to the symbol. */
+        .dot-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-style: italic;
+        }
+
+        /* Link color within the legend. */
+        #legend a {
+            color: black;
+        }
+
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="legend"></div>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1Ijoic3VubGlnaHRzd29yZHMiLCJhIjoiY212NWlsdHBtMDYyNTJ5cHc0b2VicjRqdSJ9.CihPb67PSMZvUwce_YE-uA';
+        const mymap = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/standard', //Lets you see the differences in climate across the world
+            projection: 'globe',
+            center: [-96, 37.8],
+            zoom: 1
+        });
+
+        // Anchor the legend to the HTML element with id="legend".
+        const legend = document.getElementById('legend');
+        const grades = [10000, 100000, 1000000, 5000000, 10000000]; //Went with 5 values due to the larger sample of cities in the dataset
+        const radii = [2.3, 5.3, 10.6, 14.5, 24.4]; //These values were calculated using the formula r = sqrt(population / pi) to get the radius of a circle with the same area as the population value.
+        const colors = ['#b5de2b', '#35b779', '#1f9e89', '#31688e', '#440154'];
+        const labels = ['<strong>Population</strong>'];
+
+        for (let i = 0; i < grades.length; i++) {
+        const value = grades[i];
+        const diameter = 2 * radii[i];
+
+        labels.push(
+            '<p class="break"><i class="dot" style="background:' + colors[i] +
+            '; width:' + diameter + 'px; height:' + diameter +
+            'px;"></i> <span class="dot-label" style="top:' +
+            diameter / 2 + 'px;">' + value + '</span></p>'
+            );
+        }
+
+const source =
+    '<p style="text-align:right; font-size:10pt;">Source: ' +
+    '<a href="https://earthquake.usgs.gov/earthquakes/">USGS</a></p>';
+
+legend.innerHTML = labels.join('') + source;
+
+        mymap.on('style.load', () => {
+            mymap.setConfigProperty('basemap', 'showPointOfInterestLabels', false);
+            mymap.setConfigProperty('basemap', 'showPlaceLabels', false); //Removes clutter from the map by not showing city labels on top of the circles.
+        });
+        
+        mymap.on('load', () => {
+            mymap.addSource('population', {
+                type: 'geojson',
+                data: 'data/world-cities.geojson'
+            });
+            
+            mymap.addLayer({
+                id: 'population-layer',
+                type: 'circle',
+                source: 'population',
+                paint: {
+                    'circle-radius': [
+                        'interpolate', ['linear'],
+                        ['sqrt', ['to-number', ['get', 'population'], 0]], //Using square roots so that the map doesn't become cluttered with circles
+                        122,  1.5,   // sqrt(15,001, the minimum population in the dataset)
+                        5611, 25     // sqrt(31,480,498, the max. found this using jq)
+                        ],
+                    'circle-stroke-width': 0.5,
+                    'circle-color': [
+                        'interpolate', ['linear'],
+                        ['sqrt', ['to-number', ['get', 'population'], 0]], //Yellow to purple colour ramp doesn't clash as much as red does while still remaining visually distinct.
+                        122,  '#fde725',
+                        316,  '#b5de2b',
+                        707,  '#6ece58',
+                        1000, '#35b779',
+                        2236, '#1f9e89',
+                        3162, '#31688e',
+                        5611, '#440154'
+                    ],
+                    'circle-stroke-color': 'black'
+                    }
+                });
+            
+            mymap.on('click', 'population-layer', (event) => {
+                const feature = event.features[0];
+                const coordinates = feature.geometry.coordinates.slice(0, 2);
+
+                new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(`
+                    <strong>City:</strong> ${feature.properties.city}<br>
+                    <strong>Population:</strong> ${feature.properties.population}
+                `)
+                .addTo(mymap);
+            });
+
+        });
+
+        // Add the next steps here, inside this script.
+    </script>
+</body>
+</html>
